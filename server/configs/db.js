@@ -19,6 +19,8 @@ const connectDB = async () => {
   } catch (error) {
     console.error("MongoDB error name:", error.name);
     console.error("MongoDB error message:", error.message);
+
+    throw error;
   }
 };
 
