@@ -1,9 +1,0 @@
-
-
-
-
-
-gullbahisht43_db_user
-XP40BhBkc0iKBzfu
-
-mongodb+srv://gullbahisht43_db_user:XP40BhBkc0iKBzfu@cluster0.aovtrgh.mongodb.net/?appName=Cluster0
