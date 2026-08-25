@@ -17,6 +17,7 @@ const generateToken = (userId) => {
 
 export const registerUser = async (req, res) => {
   try {
+    console.log("REGISTER BODY:", req.body);
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
@@ -47,6 +48,7 @@ export const registerUser = async (req, res) => {
       .status(201)
       .json({ message: "User created successfully", token, user: newUser });
   } catch (error) {
+    console.error("REGISTER ERROR:", error);
     return res.status(400).json({ message: error.message });
   }
 };
