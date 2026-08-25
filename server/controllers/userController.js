@@ -17,21 +17,30 @@ const generateToken = (userId) => {
 
 export const registerUser = async (req, res) => {
   try {
-    console.log("REGISTER BODY:", req.body);
+    console.log("STEP 1 - REGISTER BODY:", req.body);
+
     const { name, email, password } = req.body;
 
     if (!name || !email || !password) {
-      return res.status(400).json({ message: "Missing required feilds" });
+      console.log("STEP 2 - Missing fields");
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
+    console.log("STEP 3 - Checking user in MongoDB");
+
     const user = await User.findOne({ email });
+
+    console.log("STEP 4 - User query completed:", !!user);
 
     if (user) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // create new user
+    console.log("STEP 5 - Hashing password");
+
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    console.log("STEP 6 - Creating user");
 
     const newUser = await User.create({
       name,
@@ -39,17 +48,26 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
     });
 
-    //return success message
+    console.log("STEP 7 - User created");
 
     const token = generateToken(newUser._id);
+
     newUser.password = undefined;
 
-    return res
-      .status(201)
-      .json({ message: "User created successfully", token, user: newUser });
+    console.log("STEP 8 - Registration successful");
+
+    return res.status(201).json({
+      message: "User created successfully",
+      token,
+      user: newUser,
+    });
   } catch (error) {
-    console.error("REGISTER ERROR:", error);
-    return res.status(400).json({ message: error.message });
+    console.error("REGISTER ERROR:", error.message);
+    console.error(error);
+
+    return res.status(400).json({
+      message: error.message,
+    });
   }
 };
 
