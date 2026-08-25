@@ -1,0 +1,217 @@
+import Resume from "../models/Resume.js";
+import ai from "../configs/ai.js";
+ 
+
+
+// POST: /api/ai/enhance-pro-sum
+
+export const enhanceProfessionalSummary = async (req, res) => {
+  try {
+    const { userContent } = req.body;
+
+    if (!userContent) {
+      return res.status(400).json({
+        message: "Missing required fields",
+      });
+    }
+
+    const response = await ai.interactions.create({
+      model: process.env.GEMINI_MODEL,
+      input: `
+        You are an expert in resume writing.
+
+        Your task is to enhance the professional summary of a resume.
+        The summary should be 1-2 sentences, highlighting key skills,
+        experience, and career objectives.
+
+        Make it compelling and ATS-friendly.
+        Only return the enhanced summary text. Do not include options,
+        explanations, or anything else.
+
+        Here is the user's professional summary:
+        ${userContent}
+            `,
+    });
+
+    res.status(200).json({
+      enhancedSummary: response.output_text,
+    });
+  } catch (error) {
+  console.error("ENHANCE SUMMARY ERROR:", error);
+
+  if (error.status === 429 || error.message?.includes("429")) {
+    return res.status(429).json({
+      message:
+        "AI quota exceeded. Please wait a little and try again.",
+    });
+  }
+
+  return res.status(500).json({
+    message: error.message || "Something went wrong",
+  });
+  }
+};
+
+//enhancing job description
+//POST: /api/ai/enhance-job-desc
+
+// POST: /api/ai/enhance-job-description
+
+export const enhanceJobDescription = async (req, res) => {
+  try {
+    const { userContent } = req.body;
+
+    if (!userContent) {
+      return res.status(400).json({
+        message: "Missing required fields",
+      });
+    }
+
+    const response = await ai.interactions.create({
+      model: process.env.GEMINI_MODEL,
+      input: `
+You are an expert resume writer.
+
+Enhance the following job description for a professional resume.
+
+Requirements:
+- Make it professional and ATS-friendly.
+- Use strong action verbs.
+- Highlight responsibilities and achievements.
+- Keep the information truthful.
+- Do not invent achievements or skills.
+- Do not use generic phrases.
+- Only return the improved job description.
+- Do not include explanations or headings.
+
+Job description:
+${userContent}
+`,
+    });
+
+    console.log("AI JOB DESCRIPTION RESPONSE:", response);
+
+    return res.status(200).json({
+      enhancedJobDescription: response.output_text,
+    });
+
+  } catch (error) {
+    console.error("ENHANCE JOB DESCRIPTION ERROR:", error);
+
+    if (error.status === 429 || error.message?.includes("429")) {
+      return res.status(429).json({
+        message:
+          "Gemini API quota exceeded. Please wait and try again later.",
+      });
+    }
+
+    return res.status(500).json({
+      message: error.message || "Something went wrong",
+    });
+  }
+};
+
+//uploading resume to database
+// POST: /api/ai/upload-resume
+
+// POST: /api/ai/upload-resume
+
+export const uploadResume = async (req, res) => {
+  try {
+    const { resumeText, title } = req.body;
+
+    const userId = req.userId;
+
+    if (!resumeText) {
+      return res.status(400).json({
+        message: "Missing required fields",
+      });
+    }
+
+    const response = await ai.interactions.create({
+      model: process.env.GEMINI_MODEL,
+
+      input: `
+You are an expert AI agent specialized in extracting structured information from resumes.
+
+Extract the information from the resume and return ONLY valid JSON.
+
+Do not include:
+- Markdown
+- \`\`\`json
+- Explanations
+- Extra text
+
+Use EXACTLY this JSON structure:
+
+{
+  "professional_summary": "",
+  "skills": [],
+  "personal_info": {
+    "image": "",
+    "full_name": "",
+    "profession": "",
+    "email": "",
+    "phone": "",
+    "location": "",
+    "linkedin": "",
+    "website": ""
+  },
+  "experience": [
+    {
+      "company": "",
+      "position": "",
+      "start_date": "",
+      "end_date": "",
+      "description": "",
+      "is_current": false
+    }
+  ],
+  "project": [
+    {
+      "name": "",
+      "type": "",
+      "description": ""
+    }
+  ],
+  "education": [
+    {
+      "institution": "",
+      "degree": "",
+      "feild": "",
+      "graduation_date": "",
+      "gpa": ""
+    }
+  ]
+}
+
+If information is not available in the resume, use an empty string, empty array, or false where appropriate.
+
+Resume:
+${resumeText}
+      `,
+    });
+
+    const extractedData = response.output_text;
+
+    const parsedData = JSON.parse(extractedData);
+
+    const newResume = await Resume.create({
+      userId,
+      title: title || "Untitled Resume",
+      ...parsedData,
+    });
+
+    return res.status(200).json({
+      message: "Resume uploaded successfully",
+      resume: newResume,
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Something went wrong",
+    });
+  }
+};

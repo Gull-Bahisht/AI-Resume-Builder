@@ -1,0 +1,23 @@
+
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Prata&display=swap');
+@import "tailwindcss";
+
+*{
+    font-family: "Outfit", sans-serif;
+}
+
+button {
+    cursor: pointer;
+}
+
+input:not([type="checkbox"]) {
+    @apply outline-none focus:ring border border-gray-300
+    focus:ring-orange-500 focus:border-orange-500 rounded-lg px-3 py-2;
+}
+
+textarea {
+    @apply outline-none focus:ring border border-gray-300
+    focus:ring-orange-500 focus:border-orange-500 rounded-lg resize-none px-3 py-2;
+}
+    
