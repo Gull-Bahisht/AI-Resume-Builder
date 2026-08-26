@@ -19,26 +19,26 @@ export const enhanceProfessionalSummary = async (req, res) => {
       });
     }
 
-    const response = await ai.interactions.create({
-      model,
-      input: `
-        You are an expert in resume writing.
+    const response = await ai.models.generateContent({
+  model: process.env.GEMINI_MODEL,
+  contents: `
+    You are an expert in resume writing.
 
-        Your task is to enhance the professional summary of a resume.
-        The summary should be 1-2 sentences, highlighting key skills,
-        experience, and career objectives.
+    Your task is to enhance the professional summary of a resume.
+    The summary should be 1-2 sentences, highlighting key skills,
+    experience, and career objectives.
 
-        Make it compelling and ATS-friendly.
-        Only return the enhanced summary text. Do not include options,
-        explanations, or anything else.
+    Make it compelling and ATS-friendly.
+    Only return the enhanced summary text. Do not include options,
+    explanations, or anything else.
 
-        Here is the user's professional summary:
-        ${userContent}
-            `,
-    });
+    Here is the user's professional summary:
+    ${userContent}
+  `,
+});
 
     res.status(200).json({
-      enhancedSummary: response.output_text,
+      enhancedSummary: response.text,
     });
   } catch (error) {
   console.error("ENHANCE SUMMARY ERROR:", error);
