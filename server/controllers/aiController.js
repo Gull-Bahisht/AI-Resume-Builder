@@ -1,7 +1,11 @@
 import Resume from "../models/Resume.js";
 import ai from "../configs/ai.js";
+import Resume from "../models/Resume.js";
+import ai from "../configs/ai.js";
  
+const model = process.env.GEMINI_MODEL;
 
+console.log("GEMINI MODEL:", model);
 
 // POST: /api/ai/enhance-pro-sum
 
@@ -16,7 +20,7 @@ export const enhanceProfessionalSummary = async (req, res) => {
     }
 
     const response = await ai.interactions.create({
-      model: process.env.GEMINI_MODEL,
+      model,
       input: `
         You are an expert in resume writing.
 
@@ -68,7 +72,7 @@ export const enhanceJobDescription = async (req, res) => {
     }
 
     const response = await ai.interactions.create({
-      model: process.env.GEMINI_MODEL,
+      model,
       input: `
 You are an expert resume writer.
 
@@ -129,7 +133,7 @@ export const uploadResume = async (req, res) => {
     }
 
     const response = await ai.interactions.create({
-      model: process.env.GEMINI_MODEL,
+      model,
 
       input: `
 You are an expert AI agent specialized in extracting structured information from resumes.
