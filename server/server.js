@@ -3,6 +3,7 @@ import cors from "cors";
 import "dotenv/config";
 import connectDB from "./configs/db.js";
 import dns from "dns";
+
 import userRouter from "./routes/userRoures.js";
 import resumeRouter from "./routes/resumeRoutes.js";
 import aiRouter from "./routes/aiRoutes.js";
@@ -22,6 +23,7 @@ app.use("/api/users", userRouter);
 app.use("/api/resumes", resumeRouter);
 app.use("/api/ai", aiRouter);
 
-connectDB();
+// Connect to MongoDB
+await connectDB();
 
 export default app;
