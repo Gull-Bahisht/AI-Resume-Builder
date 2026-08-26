@@ -1,11 +1,10 @@
 import Resume from "../models/Resume.js";
 import ai from "../configs/ai.js";
-import Resume from "../models/Resume.js";
-import ai from "../configs/ai.js";
- 
+
 const model = process.env.GEMINI_MODEL;
 
 console.log("GEMINI MODEL:", model);
+console.log("GEMINI API KEY EXISTS:", !!process.env.GEMINI_API_KEY);
 
 // POST: /api/ai/enhance-pro-sum
 
@@ -20,46 +19,49 @@ export const enhanceProfessionalSummary = async (req, res) => {
     }
 
     const response = await ai.models.generateContent({
-  model: process.env.GEMINI_MODEL,
-  contents: `
-    You are an expert in resume writing.
+      model,
+      contents: `
+You are an expert resume writer.
 
-    Your task is to enhance the professional summary of a resume.
-    The summary should be 1-2 sentences, highlighting key skills,
-    experience, and career objectives.
+Enhance the following professional summary for a resume.
 
-    Make it compelling and ATS-friendly.
-    Only return the enhanced summary text. Do not include options,
-    explanations, or anything else.
+Requirements:
+- Make it professional and ATS-friendly.
+- Keep it to 1-2 sentences.
+- Highlight relevant skills, experience, and career objectives.
+- Keep the information truthful.
+- Do not invent achievements or skills.
+- Only return the improved summary.
+- Do not include explanations or headings.
 
-    Here is the user's professional summary:
-    ${userContent}
-  `,
-});
+Professional summary:
+${userContent}
+      `,
+    });
 
-    res.status(200).json({
+    console.log("AI SUMMARY RESPONSE RECEIVED");
+
+    return res.status(200).json({
       enhancedSummary: response.text,
     });
+
   } catch (error) {
-  console.error("ENHANCE SUMMARY ERROR:", error);
+    console.error("ENHANCE SUMMARY ERROR:", error);
 
-  if (error.status === 429 || error.message?.includes("429")) {
-    return res.status(429).json({
-      message:
-        "AI quota exceeded. Please wait a little and try again.",
+    if (error.status === 429 || error.message?.includes("429")) {
+      return res.status(429).json({
+        message: "AI quota exceeded. Please wait and try again later.",
+      });
+    }
+
+    return res.status(500).json({
+      message: error.message || "Something went wrong",
     });
-  }
-
-  return res.status(500).json({
-    message: error.message || "Something went wrong",
-  });
   }
 };
 
-//enhancing job description
-//POST: /api/ai/enhance-job-desc
 
-// POST: /api/ai/enhance-job-description
+// POST: /api/ai/enhance-job-desc
 
 export const enhanceJobDescription = async (req, res) => {
   try {
@@ -71,9 +73,9 @@ export const enhanceJobDescription = async (req, res) => {
       });
     }
 
-    const response = await ai.interactions.create({
+    const response = await ai.models.generateContent({
       model,
-      input: `
+      contents: `
 You are an expert resume writer.
 
 Enhance the following job description for a professional resume.
@@ -90,13 +92,13 @@ Requirements:
 
 Job description:
 ${userContent}
-`,
+      `,
     });
 
-    console.log("AI JOB DESCRIPTION RESPONSE:", response);
+    console.log("AI JOB DESCRIPTION RESPONSE RECEIVED");
 
     return res.status(200).json({
-      enhancedJobDescription: response.output_text,
+      enhancedJobDescription: response.text,
     });
 
   } catch (error) {
@@ -104,8 +106,7 @@ ${userContent}
 
     if (error.status === 429 || error.message?.includes("429")) {
       return res.status(429).json({
-        message:
-          "Gemini API quota exceeded. Please wait and try again later.",
+        message: "Gemini API quota exceeded. Please wait and try again later.",
       });
     }
 
@@ -115,8 +116,6 @@ ${userContent}
   }
 };
 
-//uploading resume to database
-// POST: /api/ai/upload-resume
 
 // POST: /api/ai/upload-resume
 
@@ -132,10 +131,9 @@ export const uploadResume = async (req, res) => {
       });
     }
 
-    const response = await ai.interactions.create({
+    const response = await ai.models.generateContent({
       model,
-
-      input: `
+      contents: `
 You are an expert AI agent specialized in extracting structured information from resumes.
 
 Extract the information from the resume and return ONLY valid JSON.
@@ -196,7 +194,7 @@ ${resumeText}
       `,
     });
 
-    const extractedData = response.output_text;
+    const extractedData = response.text;
 
     const parsedData = JSON.parse(extractedData);
 
@@ -212,10 +210,10 @@ ${resumeText}
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("UPLOAD RESUME ERROR:", error);
 
     return res.status(500).json({
-      message: "Something went wrong",
+      message: error.message || "Something went wrong",
     });
   }
 };
