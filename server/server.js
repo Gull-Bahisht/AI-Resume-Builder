@@ -12,8 +12,18 @@ dns.setServers(["8.8.8.8", "1.1.1.1"]);
 
 const app = express();
 
+app.use(
+  cors({
+    origin: [
+      "https://ai-resume-builder-gules-zeta-80.vercel.app",
+      "https://ai-resume-builder-ewnp-8sxa5q1jl-gull-bahishts-projects.vercel.app",
+      "http://localhost:5173",
+    ],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
-app.use(cors());
 
 app.get("/", (req, res) => {
   res.send("Server is live!");
