@@ -2,13 +2,62 @@ import Resume from "../models/Resume.js";
 import ai from "../configs/ai.js";
 
 const model = process.env.GEMINI_MODEL;
+const fallbackModel = "gemini-3.6-flash";
 
 console.log("GEMINI MODEL:", model);
+console.log("GEMINI FALLBACK MODEL:", fallbackModel);
 console.log("GEMINI API KEY EXISTS:", !!process.env.GEMINI_API_KEY);
+
+
+// Helper function for Gemini requests
+// Tries the main model first.
+// If it is temporarily unavailable (503), tries the fallback model.
+const generateWithFallback = async (contents) => {
+  try {
+    console.log(`Trying Gemini model: ${model}`);
+
+    const response = await ai.models.generateContent({
+      model,
+      contents,
+    });
+
+    console.log(`Gemini response received from: ${model}`);
+
+    return response;
+
+  } catch (error) {
+
+    const is503 =
+      error.status === 503 ||
+      error.message?.includes("503") ||
+      error.message?.includes("UNAVAILABLE");
+
+    if (is503) {
+      console.log(
+        `${model} is currently unavailable. Trying ${fallbackModel}...`
+      );
+
+      const fallbackResponse = await ai.models.generateContent({
+        model: fallbackModel,
+        contents,
+      });
+
+      console.log(
+        `Gemini fallback response received from: ${fallbackModel}`
+      );
+
+      return fallbackResponse;
+    }
+
+    throw error;
+  }
+};
+
 
 // POST: /api/ai/enhance-pro-sum
 
 export const enhanceProfessionalSummary = async (req, res) => {
+   console.log("🔥 NEW AI CONTROLLER IS RUNNING 🔥");
   try {
     const { userContent } = req.body;
 
@@ -18,9 +67,7 @@ export const enhanceProfessionalSummary = async (req, res) => {
       });
     }
 
-    const response = await ai.models.generateContent({
-      model,
-      contents: `
+    const response = await generateWithFallback(`
 You are an expert resume writer.
 
 Enhance the following professional summary for a resume.
@@ -36,10 +83,7 @@ Requirements:
 
 Professional summary:
 ${userContent}
-      `,
-    });
-
-    console.log("AI SUMMARY RESPONSE RECEIVED");
+    `);
 
     return res.status(200).json({
       enhancedSummary: response.text,
@@ -48,9 +92,14 @@ ${userContent}
   } catch (error) {
     console.error("ENHANCE SUMMARY ERROR:", error);
 
-    if (error.status === 429 || error.message?.includes("429")) {
+    if (
+      error.status === 429 ||
+      error.message?.includes("429") ||
+      error.message?.includes("quota")
+    ) {
       return res.status(429).json({
-        message: "AI quota exceeded. Please wait and try again later.",
+        message:
+          "AI quota exceeded. Please wait and try again later.",
       });
     }
 
@@ -73,9 +122,7 @@ export const enhanceJobDescription = async (req, res) => {
       });
     }
 
-    const response = await ai.models.generateContent({
-      model,
-      contents: `
+    const response = await generateWithFallback(`
 You are an expert resume writer.
 
 Enhance the following job description for a professional resume.
@@ -92,10 +139,7 @@ Requirements:
 
 Job description:
 ${userContent}
-      `,
-    });
-
-    console.log("AI JOB DESCRIPTION RESPONSE RECEIVED");
+    `);
 
     return res.status(200).json({
       enhancedJobDescription: response.text,
@@ -104,9 +148,14 @@ ${userContent}
   } catch (error) {
     console.error("ENHANCE JOB DESCRIPTION ERROR:", error);
 
-    if (error.status === 429 || error.message?.includes("429")) {
+    if (
+      error.status === 429 ||
+      error.message?.includes("429") ||
+      error.message?.includes("quota")
+    ) {
       return res.status(429).json({
-        message: "Gemini API quota exceeded. Please wait and try again later.",
+        message:
+          "Gemini API quota exceeded. Please wait and try again later.",
       });
     }
 
@@ -131,9 +180,7 @@ export const uploadResume = async (req, res) => {
       });
     }
 
-    const response = await ai.models.generateContent({
-      model,
-      contents: `
+    const response = await generateWithFallback(`
 You are an expert AI agent specialized in extracting structured information from resumes.
 
 Extract the information from the resume and return ONLY valid JSON.
@@ -191,8 +238,7 @@ If information is not available in the resume, use an empty string, empty array,
 
 Resume:
 ${resumeText}
-      `,
-    });
+    `);
 
     const extractedData = response.text;
 
@@ -211,6 +257,17 @@ ${resumeText}
 
   } catch (error) {
     console.error("UPLOAD RESUME ERROR:", error);
+
+    if (
+      error.status === 429 ||
+      error.message?.includes("429") ||
+      error.message?.includes("quota")
+    ) {
+      return res.status(429).json({
+        message:
+          "Gemini API quota exceeded. Please wait and try again later.",
+      });
+    }
 
     return res.status(500).json({
       message: error.message || "Something went wrong",
